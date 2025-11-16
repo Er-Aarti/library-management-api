@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,6 +12,8 @@ class AuthenticationTest extends TestCase
     /**
      * A basic unit test example.
      */
+    use DatabaseTransactions;
+
     public function test_auth_user(): void
     {
         $response = $this->postJson('/api/register', [

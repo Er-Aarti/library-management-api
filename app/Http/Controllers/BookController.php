@@ -44,8 +44,10 @@ class BookController extends Controller
      */
     public function index()
     {
-        $books = Cache::remember('books', 3600, function () {
-            return Books::paginate(25);
+        $page = request()->get('page', 1);
+        $limit = request()->get('limit', 25);
+        $books = Cache::tags(['books'])->remember("books_page_{$page}_limit_{$limit}", 3600, function () use ($limit) {
+            return Books::paginate($limit);
         });
         return response()->json($books);
     }
@@ -144,7 +146,7 @@ class BookController extends Controller
     public function store(BooksRequest $request)
     {
         $book = Books::create($request->all());
-        Cache::forget('books');
+        Cache::tags(['books'])->flush();
         return response()->json($book, 201);
     }
 
@@ -180,13 +182,14 @@ class BookController extends Controller
         $book = Books::findOrFail($id);
         $book->update($request->all());
 
-        Cache::forget('books');
+        Cache::tags(['books'])->flush();
         return response()->json($book);
     }
 
     public function destroy($id)
     {
         Books::destroy($id);
+        Cache::tags(['books'])->flush();
         return response()->json(['message' => 'Book deleted']);
     }
 
@@ -235,6 +238,7 @@ class BookController extends Controller
             }
         } catch (\Exception $e) {
             Log::error("Error while borrowing book: " . $e->getMessage());
+            return response()->json(['message' => 'Something went wrong while borrowing the book'], 500);
         }
     }
 
@@ -280,13 +284,6 @@ class BookController extends Controller
         }
 
         if ($book->status === 'borrowed') {
-            $book = Books::findOrFail($id);
-
-            $borrowing = Borrowing::where('user_id', auth()->id())
-                ->where('book_id', $id)
-                ->whereNull('returned_at')
-                ->firstOrFail();
-
             $book->update(['status' => 'available']);
             $borrowing->update(['returned_at' => now()]);
 

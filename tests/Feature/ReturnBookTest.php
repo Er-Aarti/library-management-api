@@ -10,6 +10,7 @@ use Tests\TestCase;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
 use DB;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class ReturnBookTest extends TestCase
 {
@@ -17,25 +18,41 @@ class ReturnBookTest extends TestCase
      * A basic feature test example.
      */
     // use RefreshDatabase;
+    use DatabaseTransactions;
+
     public function test_return_book(): void
     {
-        $user = User::factory()->create(['role' => 'user']);
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'testuser@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'user',
+        ]);
         Sanctum::actingAs($user);
 
-        $this->seed(\Database\Seeders\BookSeeder::class);
-        $this->seed(\Database\Seeders\BookBorrowingSeeder::class);
-
-        DB::table('borrowings')->update(['user_id' => $user->id]);
-        $bookId = DB::table('borrowings')->first()->book_id;
-
-        $response = $this->postJson("/api/books/{$bookId}/return");
-
+        $book = Books::create([
+            'title' => 'Test Book',
+            'author' => 'Test Author',
+            'date' => now()->subDays(10)->toDateString(),
+            'status' => 'borrowed',
+        ]);
+        $borrowing = Borrowing::create([
+            'book_id' => $book->id,
+            'user_id' => $user->id,
+            'borrowed_at' => now()->subDays(5),
+            'returned_at' => null,
+        ]);
+        $response = $this->postJson("/api/books/{$book->id}/return");
         $response->assertStatus(200)
             ->assertJson(['message' => 'Book returned successfully']);
 
         $this->assertDatabaseHas('books', [
-            'id' => $bookId,
-            'status' => 'available'
+            'id' => $book->id,
+            'status' => 'available',
+        ]);
+        $this->assertDatabaseHas('borrowings', [
+            'id' => $borrowing->id,
+            'returned_at' => now(),
         ]);
     }
 }
