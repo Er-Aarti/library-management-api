@@ -10,6 +10,7 @@ use App\Events\BookBorrowed;
 use App\Http\Requests\BooksRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class BookController extends Controller
@@ -18,6 +19,18 @@ class BookController extends Controller
     {
         $this->middleware('auth:sanctum');
         $this->middleware('role:admin')->only(['store', 'update', 'destroy']);
+    }
+
+    private function clearBooksCache()
+    {
+        $cacheFiles = Storage::disk('local')->files('framework/cache/data');
+        foreach ($cacheFiles as $file) {
+            $content = Storage::disk('local')->get($file);
+            // delete only keys related to "books_"
+            if (strpos($content, 'books_') !== false) {
+                Storage::disk('local')->delete($file);
+            }
+        }
     }
 
     /**
@@ -46,7 +59,8 @@ class BookController extends Controller
     {
         $page = request()->get('page', 1);
         $limit = request()->get('limit', 25);
-        $books = Cache::tags(['books'])->remember("books_page_{$page}_limit_{$limit}", 3600, function () use ($limit) {
+        $cacheKey = "books_page_{$page}_limit_{$limit}";
+        $books = Cache::remember($cacheKey, 3600, function () use ($limit) {
             return Books::paginate($limit);
         });
         return response()->json($books);
@@ -146,7 +160,7 @@ class BookController extends Controller
     public function store(BooksRequest $request)
     {
         $book = Books::create($request->all());
-        Cache::tags(['books'])->flush();
+        $this->clearBooksCache();
         return response()->json($book, 201);
     }
 
@@ -182,14 +196,14 @@ class BookController extends Controller
         $book = Books::findOrFail($id);
         $book->update($request->all());
 
-        Cache::tags(['books'])->flush();
+        $this->clearBooksCache();
         return response()->json($book);
     }
 
     public function destroy($id)
     {
         Books::destroy($id);
-        Cache::tags(['books'])->flush();
+        $this->clearBooksCache();
         return response()->json(['message' => 'Book deleted']);
     }
 

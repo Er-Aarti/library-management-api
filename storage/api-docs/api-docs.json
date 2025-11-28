@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost",
+            "url": "http://127.0.0.1:8000",
             "description": "API Server"
         }
     ],
@@ -24,11 +24,11 @@
                             "schema": {
                                 "properties": {
                                     "name": {
-                                        "type": "string",
+                                        "type": "text",
                                         "example": "John Doe"
                                     },
                                     "email": {
-                                        "type": "string",
+                                        "type": "text",
                                         "example": "john@gmail.com"
                                     },
                                     "password": {
@@ -36,7 +36,7 @@
                                         "example": "12345678"
                                     },
                                     "role": {
-                                        "type": "string",
+                                        "type": "text",
                                         "example": "admin"
                                     }
                                 },
