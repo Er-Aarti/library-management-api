@@ -1,4 +1,4 @@
-# Dockerfile for Laravel 10 on Render
+# Dockerfile for Laravel 10 on Render / Railway
 FROM php:8.2-apache
 
 # Set working directory
@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     mariadb-client \
     && docker-php-ext-install pdo_mysql mbstring zip
 
-# Enable Apache mod_rewrite (required for Laravel routes)
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 # Copy project files
@@ -30,8 +30,16 @@ RUN composer install --no-dev --optimize-autoloader
 # Set permissions for storage and cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose port 10000 (Render uses $PORT)
+# Set ENV variables if needed (Optional)
+# ENV APP_ENV=production
+
+# Run Migrations, Seeders & Unit Tests
+# Using entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Expose port
 EXPOSE 10000
 
-# Start Apache
-CMD ["apache2-foreground"]
+# Start Apache and run entrypoint
+CMD ["/entrypoint.sh"]
