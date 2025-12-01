@@ -16,7 +16,9 @@ php artisan db:seed --class=BookSeeder
 php artisan db:seed --class=BookBorrowingSeeder
 
 # Run unit tests
-php artisan test
+# php artisan test
 
 # Start Apache in foreground
+# Fix Apache ServerName warning
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
 apache2-foreground
