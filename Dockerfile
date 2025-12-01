@@ -39,7 +39,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Expose port
-EXPOSE 10000
+EXPOSE 80
 
 # Start Apache and run entrypoint
 CMD ["/entrypoint.sh"]
