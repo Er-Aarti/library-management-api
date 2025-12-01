@@ -1,24 +1,25 @@
 #!/bin/bash
 
-# Wait for DB to be ready (optional if using external DB)
 sleep 5
 
-# Clear caches
+echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 
-# Run migrations
+php artisan key:generate
+php artisan config:cache
+
 php artisan migrate --force
-entrypoint.sh
-# Run seeders
+
 php artisan db:seed --class=BookSeeder
 php artisan db:seed --class=BookBorrowingSeeder
 
-# Run unit tests
+# Remove or comment this line - avoid recursion
+# entrypoint.sh
+
+# Don't run tests here in production (optional)
 # php artisan test
 
-# Start Apache in foreground
-# Fix Apache ServerName warning
-echo "ServerName localhost" >> /etc/apache2/apache2.conf
 apache2-foreground
